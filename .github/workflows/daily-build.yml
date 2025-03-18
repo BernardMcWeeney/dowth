@@ -1,0 +1,19 @@
+name: Daily Cloudflare Build
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # Runs at 00:00 UTC daily
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Trigger Cloudflare Pages Build
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/pages/projects/YOUR_PROJECT/deployments" \
+          -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+          -H "Content-Type: application/json"
