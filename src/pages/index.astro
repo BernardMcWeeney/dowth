@@ -1,11 +1,20 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Footer from '../components/Footer.astro';
+import Timeline from '../components/Timeline.astro';
+import MoonPhase from '../components/MoonPhase.astro';
 ---
 
 <Layout>
-	<Welcome />
+  <div class="fixed inset-0 bg-cover bg-center z-[-1] brightness-[0.7]" style="background-image: url('dowth-background.jpg')"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-black/30 to-black/50 z-[-1]"></div>
+  
+  <main class="h-screen flex flex-col justify-center items-center text-center p-8 text-white">
+    <h1 class="font-['Cinzel'] text-[clamp(3rem,10vw,8rem)] mb-2 tracking-widest drop-shadow-lg">Dowth</h1>
+    <p class="text-[clamp(1.2rem,3vw,2rem)] font-light italic mb-8 drop-shadow-md"><em>Dubhadh</em> ('darkening')</p>
+  </main>
+  
+  <MoonPhase />
+  <Timeline />
+  <Footer />
 </Layout>
