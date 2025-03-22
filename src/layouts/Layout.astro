@@ -4,7 +4,7 @@ import '../styles/global.css'
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,7 +16,7 @@ import '../styles/global.css'
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
     <meta name="description" content="Ancient passage tomb at Dowth, Ireland. Experience the connection to solstices and lunar cycles." />
   </head>
-  <body class="min-h-screen bg-black text-white font-['Raleway'] overflow-x-hidden">
+  <body class="min-h-full bg-black text-white font-['Raleway'] overflow-x-hidden">
     <slot />
   </body>
 </html>
@@ -24,11 +24,14 @@ import '../styles/global.css'
 <style is:global>
   html {
     scroll-behavior: smooth;
+    height: 100%;
   }
   
   body {
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
   }
   
   .font-cinzel {

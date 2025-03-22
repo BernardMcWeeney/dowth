@@ -9,6 +9,68 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
       super();
       this.fetchMoonData();
     }
+    
+    connectedCallback() {
+      // Ensure DOM is ready before setting up event listeners
+      setTimeout(() => this.setupEventListeners(), 0);
+    }
+
+    setupEventListeners() {
+      console.log('Setting up moon event listeners');
+      
+      // Get DOM elements
+      const iconWrapper = this.querySelector('.moon-icon-wrapper');
+      const fullCard = this.querySelector('.moon-card');
+      const closeBtn = this.querySelector('.moon-close-btn');
+      
+      console.log('Moon elements:', { 
+        iconWrapper: !!iconWrapper, 
+        fullCard: !!fullCard, 
+        closeBtn: !!closeBtn 
+      });
+      
+      if (iconWrapper && fullCard) {
+        // Direct show/hide approach with inline styles
+        iconWrapper.addEventListener('click', (e) => {
+          console.log('Moon icon clicked');
+          this.classList.add('is-expanded');
+          fullCard.style.display = 'flex';
+          fullCard.style.opacity = '1';
+          iconWrapper.style.opacity = '0';
+          iconWrapper.style.transform = 'scale(0)';
+          e.stopPropagation();
+        });
+        
+        if (closeBtn) {
+          closeBtn.addEventListener('click', (e) => {
+            console.log('Moon close clicked');
+            this.classList.remove('is-expanded');
+            fullCard.style.display = 'none';
+            fullCard.style.opacity = '0';
+            iconWrapper.style.opacity = '1';
+            iconWrapper.style.transform = 'scale(1)';
+            e.stopPropagation();
+          });
+        }
+        
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+          if (this.classList.contains('is-expanded') && 
+              !this.contains(e.target)) {
+            console.log('Outside click - hiding moon card');
+            this.classList.remove('is-expanded');
+            fullCard.style.display = 'none';
+            fullCard.style.opacity = '0';
+            iconWrapper.style.opacity = '1';
+            iconWrapper.style.transform = 'scale(1)';
+          }
+        });
+      } else {
+        console.error('Moon components not found - will retry');
+        // Try again after a delay
+        setTimeout(() => this.setupEventListeners(), 500);
+      }
+    }
 
     async fetchMoonData() {
       const lat = "53.7038";
@@ -25,7 +87,6 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
         }
         
         const data = await response.json();
-        console.log("API Response:", data); // Log the response for debugging
         this.renderMoonPhase(data);
       } catch (error) {
         console.error("Error fetching moon data:", error);
@@ -42,6 +103,7 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
       const phaseNameEl = this.querySelector('[data-moon-phase-name]');
       const phasePercentEl = this.querySelector('[data-moon-phase-percent]');
       const moonEl = this.querySelector('[data-moon]');
+      const moonIconEl = this.querySelector('[data-moon-icon]');
       const riseTimeEl = this.querySelector('[data-moon-rise]');
       const setTimeEl = this.querySelector('[data-moon-set]');
       const dateEl = this.querySelector('[data-date]');
@@ -61,6 +123,11 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
       // Update moon visual
       if (moonEl) {
         this.updateMoonVisualization(moonEl, data.moon_phase, data.moon_illumination_percentage);
+      }
+      
+      // Update mini moon icon
+      if (moonIconEl) {
+        this.updateMoonVisualization(moonIconEl, data.moon_phase, data.moon_illumination_percentage);
       }
       
       // Show the component
@@ -147,37 +214,54 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
   customElements.define('moon-phase', MoonPhase);
 </script>
 
-<moon-phase class="fixed top-4 right-4 z-50 transition-opacity duration-700 opacity-0">
-  <div class="moon-card flex flex-col items-center p-4 rounded-xl bg-slate-900/80 shadow-lg text-white max-w-xs select-none">
-    <div class="flex items-center justify-center">
-      <div class="moon-wrapper relative mr-3">
+<moon-phase class="fixed top-4 right-4 z-50 transition-all duration-300 opacity-0">
+  <!-- Collapsed moon icon -->
+  <div class="moon-icon-wrapper cursor-pointer bg-slate-900/80 rounded-full p-3 shadow-lg hover:bg-slate-800/80 transition-colors duration-300">
+    <div class="moon-icon-container relative">
+      <div 
+        data-moon-icon 
+        class="h-10 w-10 rounded-full bg-slate-200 shadow-inner"
+      ></div>
+    </div>
+  </div>
+
+  <!-- Expanded moon card -->
+  <div class="moon-card absolute top-0 right-0 opacity-0 hidden p-4 rounded-xl bg-slate-900/80 shadow-lg text-white md:w-72 mt-12 select-none" style="display: none;">
+    <button class="moon-close-btn absolute top-2 right-2 text-slate-400 hover:text-white transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <div class="flex items-center justify-center mb-3">
+      <div class="moon-wrapper relative mr-4">
         <div 
           data-moon 
-          class="moon h-12 w-12 rounded-full bg-slate-200 shadow-inner"
+          class="h-16 w-16 rounded-full bg-slate-200 shadow-inner"
         ></div>
       </div>
       <div class="moon-info">
         <p class="text-xs text-slate-400" data-date>--/--</p>
-        <h2 class="text-lg font-medium" data-moon-phase-name>Loading...</h2>
-        <p class="text-xs text-slate-400">Illumination: <span data-moon-phase-percent>-</span></p>
+        <h2 class="text-xl font-medium" data-moon-phase-name>Loading...</h2>
+        <p class="text-sm text-slate-400">Illumination: <span data-moon-phase-percent>-</span></p>
       </div>
     </div>
     
-    <div class="moon-times grid grid-cols-2 gap-4 w-full mt-2 text-center text-xs">
+    <div class="moon-times grid grid-cols-2 gap-6 w-full mt-4 text-center">
       <div class="moon-rise">
-        <p class="text-slate-400">Rise</p>
-        <p class="font-medium" data-moon-rise>--:--</p>
+        <p class="text-slate-400 text-sm">Rise</p>
+        <p class="font-medium text-base" data-moon-rise>--:--</p>
       </div>
       <div class="moon-set">
-        <p class="text-slate-400">Set</p>
-        <p class="font-medium" data-moon-set>--:--</p>
+        <p class="text-slate-400 text-sm">Set</p>
+        <p class="font-medium text-base" data-moon-set>--:--</p>
       </div>
     </div>
   </div>
 </moon-phase>
 
 <style>
-  .moon {
+  .moon, [data-moon-icon] {
     box-shadow: inset -3px -3px 8px rgba(0,0,0,0.4);
   }
   
@@ -197,5 +281,17 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
     z-index: -1;
     pointer-events: none;
     border-radius: inherit;
+  }
+  
+  /* Transition for collapsible state */
+  moon-phase.is-expanded .moon-card {
+    display: flex !important;
+    opacity: 1 !important;
+    transition: opacity 0.3s ease;
+  }
+  
+  moon-phase.is-expanded .moon-icon-wrapper {
+    transform: scale(0);
+    opacity: 0;
   }
 </style>

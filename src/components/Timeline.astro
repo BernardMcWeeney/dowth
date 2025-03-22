@@ -2,8 +2,17 @@
 // src/components/Timeline.astro
 ---
 
-<div class="fixed bottom-12 left-0 w-full px-4 md:px-8 py-6 z-10 bg-gradient-to-b from-transparent to-black/50 backdrop-blur-sm">
+<div class="w-full px-4 md:px-8 py-6 bg-gradient-to-b from-transparent to-black/50 backdrop-blur-sm z-10 mt-auto">
   <div class="container max-w-5xl mx-auto">
+    <!-- Date and countdown display for desktop -->
+    <div class="hidden md:flex justify-between items-center mb-4 text-white">
+      <div>
+        <span id="current-date" class="text-white/80 text-sm"></span>
+      </div>
+      <div>
+        <span id="desktop-countdown" class="text-amber-200 text-sm font-medium"></span>
+      </div>
+    </div>
     <!-- Desktop Timeline -->
     <div class="hidden md:block">
       <!-- Timeline bar with gradient -->
@@ -44,7 +53,7 @@
       
       <!-- Season details -->
       <div class="mt-4 relative">
-        <div class="grid grid-cols-4 gap-6 pt-6">
+        <div class="grid grid-cols-4 gap-6 pt-2">
           <div class="text-center rounded p-2 transition-all duration-300" id="winter">
             <h4 class="uppercase text-sm tracking-widest mb-1">Winter Solstice</h4>
             <p class="text-amber-200 text-xs font-light mb-1">Grianstad an Gheimhridh</p>
@@ -117,7 +126,7 @@
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
       
-      // Simplified season data fetching
+      // Fetch season data
       const seasons = await fetchSeasonData(currentYear);
       
       if (seasons) {
@@ -125,9 +134,8 @@
       }
     } catch (error) {
       console.error('Error:', error);
-      // Fallback to approximated seasons if API fails
-      const fallbackSeasons = createFallbackSeasons(new Date().getFullYear());
-      updateTimeline(fallbackSeasons, new Date());
+      // Don't use fallback, just show error
+      console.error('Unable to load season data');
     }
   });
   
@@ -175,18 +183,8 @@
         .sort((a, b) => a.date - b.date);
     } catch (error) {
       console.error('Error fetching season data:', error);
-      return null;
+      throw error; // Let the calling function handle the error
     }
-  }
-  
-  function createFallbackSeasons(year) {
-    // Approximate dates if API fails
-    return [
-      { type: 'Winter', irishName: 'Grianstad an Gheimhridh', date: new Date(year, 11, 21) },
-      { type: 'Spring', irishName: 'Cónocht an Earraigh', date: new Date(year, 2, 20) },
-      { type: 'Summer', irishName: 'Grianstad an tSamhraidh', date: new Date(year, 5, 21) },
-      { type: 'Autumn', irishName: 'Cónocht an Fhómhair', date: new Date(year, 8, 22) }
-    ].sort((a, b) => a.date - b.date);
   }
   
   function updateTimeline(seasons, currentDate) {
@@ -252,14 +250,27 @@
     // Set countdown to next season
     if (next) {
       const daysUntil = Math.ceil((next.date - currentDate) / (1000 * 60 * 60 * 24));
-      document.getElementById('mobile-countdown').textContent = 
-        `${daysUntil} days until ${next.type}`;
+      const countdownText = `${daysUntil} days until ${next.type}`;
+      
+      // Update mobile countdown
+      document.getElementById('mobile-countdown').textContent = countdownText;
+      
+      // Update desktop countdown
+      const desktopCountdown = document.getElementById('desktop-countdown');
+      if (desktopCountdown) {
+        desktopCountdown.textContent = countdownText;
+      }
+      
+      // Set current date display
+      const currentDateEl = document.getElementById('current-date');
+      if (currentDateEl) {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        currentDateEl.textContent = currentDate.toLocaleDateString('en-IE', options);
+      }
     }
   }
   
   function getCurrentAndNextSeason(seasons, currentDate) {
-    const year = currentDate.getFullYear();
-    
     // Extended seasons list to handle year boundaries
     const extendedSeasons = [
       ...seasons.map(s => ({ ...s, date: new Date(s.date.getFullYear() - 1, s.date.getMonth(), s.date.getDate()) })),

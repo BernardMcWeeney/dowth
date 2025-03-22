@@ -2,23 +2,25 @@
 // src/components/Footer.astro
 ---
 
-<footer class="fixed bottom-0 w-full py-3 px-4 text-center text-white/60 text-xs bg-black/30 backdrop-blur-sm z-20">
-  <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
+<footer class="w-full py-3 px-4 text-center text-white/60 text-xs bg-black/30 backdrop-blur-sm z-20">
+  <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
     <p>
-      <a href="#" id="random-fact" class="hover:text-amber-200 transition-colors duration-300 text-white/70">Did you know?</a>
+      <a href="#" id="random-fact" class="hover:text-amber-200 transition-colors duration-300 text-white/70 inline-block py-1">Did you know?</a>
     </p>
     
-    <p>
-      Designed with <a href="https://greenberry.ie" target="_blank" rel="noopener" class="text-white hover:text-amber-200 transition-colors duration-300">Greenberry</a> by Bernard McWeeney | &copy; {new Date().getFullYear()} Dowth.ie
+    <p class="text-center md:text-right leading-relaxed">
+      Designed with <a href="https://greenberry.ie" target="_blank" rel="noopener" class="text-white hover:text-amber-200 transition-colors duration-300">Greenberry</a> by Bernard McWeeney<br class="md:hidden"> <span class="hidden md:inline">|</span> &copy; {new Date().getFullYear()} Dowth.ie
     </p>
   </div>
 </footer>
 
 <div id="fact-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-  <div class="bg-gray-900/90 max-w-md rounded-lg p-6 border border-amber-800/50 shadow-lg">
-    <h3 class="text-amber-200 text-lg mb-3 font-cinzel">Dowth Monument Facts</h3>
+  <div class="bg-gray-900/90 max-w-md w-full rounded-lg p-6 border border-amber-800/50 shadow-lg">
+    <h3 class="text-amber-200 text-lg mb-3 font-medium">Dowth Monument Facts</h3>
     <p id="fact-content" class="text-white/90 mb-4 text-sm leading-relaxed"></p>
-    <button id="close-modal" class="px-4 py-2 bg-amber-700/60 text-white text-sm rounded-full hover:bg-amber-600/80 transition-colors duration-300">Close</button>
+    <div class="flex justify-end">
+      <button id="close-modal" class="px-4 py-2 bg-amber-700/60 text-white text-sm rounded-full hover:bg-amber-600/80 transition-colors duration-300">Close</button>
+    </div>
   </div>
 </div>
 
