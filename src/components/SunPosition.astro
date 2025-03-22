@@ -1,323 +1,318 @@
 ---
 // SunPosition.astro
 const { ASTRONOMY_API_KEY } = import.meta.env;
+
+// Dowth coordinates (hardcoded)
+const COORDINATES = {
+  lat: "53.7038",
+  long: "-6.4504",
+};
 ---
 
-<script define:vars={{ apiKey: ASTRONOMY_API_KEY }}>
-  class SunPosition extends HTMLElement {
-    constructor() {
-      super();
-      this.fetchSunData();
-    }
-    
-    connectedCallback() {
-      // Ensure DOM is ready before setting up event listeners
-      setTimeout(() => this.setupEventListeners(), 0);
-    }
-
-    setupEventListeners() {
-      // Get DOM elements
-      const iconWrapper = this.querySelector('.sun-icon-wrapper');
-      const fullCard = this.querySelector('.sun-card');
-      const closeBtn = this.querySelector('.sun-close-btn');
-      
-      if (iconWrapper && fullCard) {
-        // Direct show/hide approach with inline styles
-        iconWrapper.addEventListener('click', (e) => {
-          this.classList.add('is-expanded');
-          fullCard.style.display = 'flex';
-          fullCard.style.opacity = '1';
-          iconWrapper.style.opacity = '0';
-          iconWrapper.style.transform = 'scale(0)';
-          e.stopPropagation();
-        });
-        
-        if (closeBtn) {
-          closeBtn.addEventListener('click', (e) => {
-            this.classList.remove('is-expanded');
-            fullCard.style.display = 'none';
-            fullCard.style.opacity = '0';
-            iconWrapper.style.opacity = '1';
-            iconWrapper.style.transform = 'scale(1)';
-            e.stopPropagation();
-          });
-        }
-        
-        // Close when clicking outside
-        document.addEventListener('click', (e) => {
-          if (this.classList.contains('is-expanded') && 
-              !this.contains(e.target)) {
-            this.classList.remove('is-expanded');
-            fullCard.style.display = 'none';
-            fullCard.style.opacity = '0';
-            iconWrapper.style.opacity = '1';
-            iconWrapper.style.transform = 'scale(1)';
-          }
-        });
-      } else {
-        // Try again after a delay
-        setTimeout(() => this.setupEventListeners(), 500);
-      }
-    }
-
-    async fetchSunData() {
-      const lat = "53.7038";
-      const long = "-6.4504";
-      
-      try {
-        const response = await fetch(
-          `https://api.ipgeolocation.io/astronomy?apiKey=${apiKey}&lat=${lat}&long=${long}`,
-          { method: "GET", redirect: "follow" }
-        );
-        
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        
-        const data = await response.json();
-        this.renderSunData(data);
-      } catch (error) {
-        console.error("Error fetching sun data:", error);
-      }
-    }
-
-    renderSunData(data) {
-      if (!data) {
-        console.error("Missing data from API response");
-        return;
-      }
-      
-      // Get elements
-      const sunriseEl = this.querySelector('[data-sun-rise]');
-      const sunsetEl = this.querySelector('[data-sun-set]');
-      const dayLengthEl = this.querySelector('[data-day-length]');
-      const dateEl = this.querySelector('[data-date]');
-      
-      // Update text content
-      if (sunriseEl) sunriseEl.textContent = data.sunrise || "--:--";
-      if (sunsetEl) sunsetEl.textContent = data.sunset || "--:--";
-      if (dateEl && data.date) dateEl.textContent = this.formatDate(data.date);
-      
-      // Calculate day length if missing
-      if (dayLengthEl) {
-        if (data.day_length) {
-          dayLengthEl.textContent = data.day_length;
-        } else if (data.sunrise && data.sunset) {
-          // Calculate day length from sunrise and sunset if available
-          try {
-            const sunriseTime = this.parseTimeString(data.sunrise);
-            const sunsetTime = this.parseTimeString(data.sunset);
-            
-            if (sunriseTime && sunsetTime) {
-              const dayLengthMinutes = (sunsetTime.hours * 60 + sunsetTime.minutes) - 
-                                      (sunriseTime.hours * 60 + sunriseTime.minutes);
-              
-              const hours = Math.floor(dayLengthMinutes / 60);
-              const minutes = dayLengthMinutes % 60;
-              
-              dayLengthEl.textContent = `${hours}h ${minutes}m`;
-            } else {
-              dayLengthEl.textContent = "Unknown";
-            }
-          } catch (e) {
-            dayLengthEl.textContent = "Unknown";
-          }
-        } else {
-          dayLengthEl.textContent = "Unknown";
-        }
-      }
-      
-      // Update sun position indicator
-      this.updateSunPosition(data);
-      
-      // Show the component
-      this.classList.remove('opacity-0');
-      this.classList.add('opacity-100');
-    }
-    
-    parseTimeString(timeStr) {
-      if (!timeStr) return null;
-      
-      // Handle format like "06:30" or "6:30 AM"
-      const parts = timeStr.split(':');
-      if (parts.length !== 2) return null;
-      
-      let hours = parseInt(parts[0], 10);
-      let minutesPart = parts[1];
-      
-      // Handle AM/PM if present
-      let minutes;
-      if (minutesPart.includes('PM')) {
-        minutes = parseInt(minutesPart.split(' ')[0], 10);
-        if (hours < 12) hours += 12;
-      } else if (minutesPart.includes('AM')) {
-        minutes = parseInt(minutesPart.split(' ')[0], 10);
-        if (hours === 12) hours = 0;
-      } else {
-        minutes = parseInt(minutesPart, 10);
-      }
-      
-      return { hours, minutes };
-    }
-    
-    updateSunPosition(data) {
-      const sunPositionIndicator = this.querySelector('.sun-position-indicator');
-      if (!sunPositionIndicator) return;
-      
-      try {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        
-        const sunrise = this.parseTimeString(data.sunrise);
-        const sunset = this.parseTimeString(data.sunset);
-        
-        if (!sunrise || !sunset) return;
-        
-        // Convert times to minutes
-        const sunriseMinutes = sunrise.hours * 60 + sunrise.minutes;
-        const sunsetMinutes = sunset.hours * 60 + sunset.minutes;
-        const currentMinutes = currentHour * 60 + currentMinute;
-        
-        // Calculate position (0 to 1)
-        let position;
-        if (currentMinutes < sunriseMinutes) {
-          // Before sunrise
-          position = 0;
-        } else if (currentMinutes > sunsetMinutes) {
-          // After sunset
-          position = 1;
-        } else {
-          // During the day
-          position = (currentMinutes - sunriseMinutes) / (sunsetMinutes - sunriseMinutes);
-        }
-        
-        // Set the position on the arc
-        sunPositionIndicator.style.left = `${position * 100}%`;
-        
-        // Change opacity based on day/night
-        const sunIcon = this.querySelector('.sun-icon');
-        if (sunIcon) {
-          if (currentMinutes >= sunriseMinutes && currentMinutes <= sunsetMinutes) {
-            sunIcon.style.opacity = "1";
-          } else {
-            sunIcon.style.opacity = "0.5";
-          }
-        }
-      } catch (e) {
-        console.error('Error updating sun position:', e);
-      }
-    }
-    
-    formatDate(dateStr) {
-      try {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-IE', { 
-          month: 'short', 
-          day: 'numeric' 
-        });
-      } catch (e) {
-        return dateStr;
-      }
-    }
-  }
-
-  customElements.define('sun-position', SunPosition);
-</script>
-
-<sun-position class="fixed top-4 left-4 z-50 transition-all duration-300 opacity-0">
-  <!-- Collapsed sun icon -->
-  <div class="sun-icon-wrapper cursor-pointer bg-amber-900/80 rounded-full p-3 shadow-lg hover:bg-amber-800/80 transition-colors duration-300">
-    <div class="sun-icon-container relative">
-      <div class="sun-icon h-8 w-8 md:h-10 md:w-10 rounded-full bg-amber-300 shadow-lg flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-900">
-          <circle cx="12" cy="12" r="5"></circle>
-          <line x1="12" y1="1" x2="12" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="23"></line>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-          <line x1="1" y1="12" x2="3" y2="12"></line>
-          <line x1="21" y1="12" x2="23" y2="12"></line>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-        </svg>
-      </div>
-    </div>
-  </div>
-
-  <!-- Expanded sun card -->
-  <div class="sun-card fixed top-0 left-0 right-0 md:absolute md:top-0 md:left-0 md:right-auto opacity-0 hidden flex-col p-5 rounded-xl md:rounded-xl bg-amber-900/90 shadow-lg text-white w-full h-auto md:w-80 md:h-auto md:mt-12 select-none" style="display: none;">
-    <button class="sun-close-btn absolute top-4 right-4 text-amber-200 hover:text-white transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
+<div id="sun-position-component" class="opacity-0 transition-opacity duration-500">
+  <!-- Sun icon button - Fixed at top left -->
+  <button id="sun-icon-button" class="fixed top-4 left-4 z-50 p-3 bg-amber-900/90 hover:bg-amber-800/90 rounded-full shadow-lg border border-amber-500/30 transition-colors duration-300 flex items-center justify-center">
+    <div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-amber-300 flex items-center justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-900">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
       </svg>
-    </button>
-    
-    <div class="text-center mb-6 mt-6 md:mt-0 md:mb-4">
-      <p class="text-base md:text-sm text-amber-200" data-date>--/--</p>
-      <h2 class="text-2xl md:text-xl font-medium">Sun Position</h2>
     </div>
-    
-    <!-- Sun position visualization -->
-    <div class="w-full h-16 md:h-14 relative mb-8 md:mb-6">
-      <div class="absolute top-0 left-0 right-0 h-3 md:h-2 bg-amber-500/30 rounded-full overflow-hidden">
-        <!-- Daytime arc -->
-        <div class="h-full bg-gradient-to-r from-amber-400/0 via-amber-400 to-amber-400/0"></div>
+  </button>
+
+  <!-- Backdrop -->
+  <div id="sun-backdrop" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300"></div>
+  
+  <!-- Modal -->
+  <div id="sun-modal" class="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm hidden opacity-0 scale-95 transition-all duration-300">
+    <div class="p-4 bg-amber-900/90 backdrop-blur-md border border-amber-500/20 rounded-xl shadow-xl text-white">
+      <!-- Close button -->
+      <button id="sun-close-btn" class="absolute top-3 right-3 text-amber-200 hover:text-white p-1 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
+      <!-- Header with date and day length -->
+      <div class="text-center mb-4">
+        <div class="flex justify-center items-center gap-3">
+          <p class="text-xs text-amber-200" id="sun-date">--/--</p>
+          <span class="text-xs text-amber-200/50">•</span>
+          <p class="text-xs text-amber-200">Day Length: <span id="day-length" class="font-medium">--h --m</span></p>
+        </div>
+        <h2 class="text-lg font-medium mt-1">Sun Position · Dowth</h2>
       </div>
       
-      <!-- Sun position indicator -->
-      <div class="sun-position-indicator absolute top-0 transform -translate-x-1/2 transition-all duration-500">
-        <div class="w-6 h-6 md:w-5 md:h-5 rounded-full bg-amber-300 shadow-md translate-y-[-9px] md:translate-y-[-6px]"></div>
+      <!-- Sun arc visualization -->
+      <div class="relative">
+        <!-- Timeline bar -->
+        <div class="h-2 bg-amber-700/40 rounded-full overflow-hidden relative">
+          <!-- Daytime segment -->
+          <div id="daytime-segment" class="absolute top-0 h-full bg-gradient-to-r from-amber-500/70 via-amber-400 to-amber-500/70 rounded-full"></div>
+        </div>
+        
+        <!-- Sun position indicator -->
+        <div id="sun-position-indicator" class="absolute top-0 -mt-1.5 transition-all duration-500">
+          <div class="w-5 h-5 rounded-full bg-amber-300 shadow-lg flex items-center justify-center">
+            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+          </div>
+        </div>
+        
+        <!-- Labels with times -->
+        <div class="flex justify-between mt-5 text-xs text-amber-200/80">
+          <div class="text-center">
+            <span>Sunrise</span>
+            <p id="sun-rise" class="font-medium text-amber-100">--:--</p>
+          </div>
+          <div class="text-center">
+            <span>Midday</span>
+            <p id="sun-midday" class="font-medium text-amber-100">--:--</p>
+          </div>
+          <div class="text-center">
+            <span>Sunset</span>
+            <p id="sun-set" class="font-medium text-amber-100">--:--</p>
+          </div>
+        </div>
       </div>
       
-      <!-- Labels -->
-      <div class="flex justify-between mt-6 md:mt-5 text-base md:text-sm text-amber-200/70">
-        <span>Sunrise</span>
-        <span>Midday</span>
-        <span>Sunset</span>
-      </div>
-    </div>
-    
-    <div class="sun-times grid grid-cols-3 gap-4 md:gap-3 w-full text-center mb-8 md:mb-0">
-      <div class="sun-rise">
-        <p class="text-amber-200 text-base md:text-sm">Rise</p>
-        <p class="font-medium text-lg md:text-base" data-sun-rise>--:--</p>
-      </div>
-      <div class="day-length">
-        <p class="text-amber-200 text-base md:text-sm">Day Length</p>
-        <p class="font-medium text-lg md:text-base" data-day-length>--h --m</p>
-      </div>
-      <div class="sun-set">
-        <p class="text-amber-200 text-base md:text-sm">Set</p>
-        <p class="font-medium text-lg md:text-base" data-sun-set>--:--</p>
-      </div>
+      <!-- Additional spacing at the bottom -->
+      <div class="h-4"></div>
     </div>
   </div>
-</sun-position>
+</div>
 
-<style>
-  .sun-card {
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 165, 0, 0.1);
+<script define:vars={{ apiKey: ASTRONOMY_API_KEY, coordinates: COORDINATES }}>
+// IIFE to avoid polluting global scope
+(function() {
+  // DOM elements
+  const elements = {
+    component: document.getElementById('sun-position-component'),
+    iconButton: document.getElementById('sun-icon-button'),
+    modal: document.getElementById('sun-modal'),
+    closeBtn: document.getElementById('sun-close-btn'),
+    backdrop: document.getElementById('sun-backdrop'),
+    sunDate: document.getElementById('sun-date'),
+    sunRise: document.getElementById('sun-rise'),
+    sunSet: document.getElementById('sun-set'),
+    sunMidday: document.getElementById('sun-midday'),
+    dayLength: document.getElementById('day-length'),
+    indicator: document.getElementById('sun-position-indicator'),
+    daytimeSegment: document.getElementById('daytime-segment')
+  };
+  
+  // Show the icon button immediately
+  if (elements.iconButton) {
+    elements.iconButton.style.opacity = '1';
+    elements.iconButton.style.display = 'flex';
   }
   
-  /* Transition for collapsible state */
-  sun-position.is-expanded .sun-card {
-    display: flex !important;
-    opacity: 1 !important;
-    transition: opacity 0.3s ease;
+  // Setup modal functionality
+  function setupModalEvents() {
+    if (!elements.iconButton || !elements.modal || !elements.backdrop) return;
+    
+    elements.iconButton.addEventListener('click', openModal);
+    elements.closeBtn?.addEventListener('click', closeModal);
+    elements.backdrop.addEventListener('click', closeModal);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !elements.modal.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
   }
   
-  sun-position.is-expanded .sun-icon-wrapper {
-    transform: scale(0);
-    opacity: 0;
+  function openModal() {
+    elements.modal.classList.remove('hidden');
+    elements.backdrop.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Animate in
+    setTimeout(() => {
+      elements.backdrop.classList.remove('opacity-0');
+      elements.modal.classList.remove('opacity-0', 'scale-95');
+    }, 10);
   }
   
-  @media (max-width: 768px) {
-    sun-position.is-expanded .sun-card {
-      height: auto;
-      min-height: 200px;
+  function closeModal() {
+    elements.backdrop.classList.add('opacity-0');
+    elements.modal.classList.add('opacity-0', 'scale-95');
+    
+    // Wait for animation before hiding
+    setTimeout(() => {
+      elements.modal.classList.add('hidden');
+      elements.backdrop.classList.add('hidden');
+      document.body.style.overflow = '';
+    }, 300);
+  }
+  
+  // Time parsing and formatting
+  function parseTimeString(timeStr) {
+    if (!timeStr || timeStr === '--:--') return null;
+    
+    const parts = timeStr.split(':');
+    if (parts.length !== 2) return null;
+    
+    let hours = parseInt(parts[0], 10);
+    let minutesPart = parts[1];
+    
+    // Handle AM/PM if present
+    let minutes;
+    if (minutesPart.includes('PM')) {
+      minutes = parseInt(minutesPart.split(' ')[0], 10);
+      if (hours < 12) hours += 12;
+    } else if (minutesPart.includes('AM')) {
+      minutes = parseInt(minutesPart.split(' ')[0], 10);
+      if (hours === 12) hours = 0;
+    } else {
+      minutes = parseInt(minutesPart, 10);
+    }
+    
+    return { 
+      hours, 
+      minutes,
+      totalMinutes: hours * 60 + minutes,
+      formatted: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+    };
+  }
+  
+  function calculateMidday(sunrise, sunset) {
+    if (!sunrise || !sunset) return null;
+    
+    const middayMinutes = Math.floor((sunrise.totalMinutes + sunset.totalMinutes) / 2);
+    const hours = Math.floor(middayMinutes / 60);
+    const minutes = middayMinutes % 60;
+    
+    return {
+      hours,
+      minutes,
+      totalMinutes: middayMinutes,
+      formatted: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+    };
+  }
+  
+  function formatDate(dateStr) {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-IE', { day: 'numeric', month: 'short' });
+    } catch (e) {
+      return dateStr;
     }
   }
-</style>
+  
+  function calculateDayLength(sunrise, sunset) {
+    if (!sunrise || !sunset) return 'Unknown';
+    
+    const dayLengthMinutes = sunset.totalMinutes - sunrise.totalMinutes;
+    const hours = Math.floor(dayLengthMinutes / 60);
+    const minutes = dayLengthMinutes % 60;
+    
+    return `${hours}h ${minutes}m`;
+  }
+  
+  // Sun position visualization
+  function updateSunVisualizations(sunrise, sunset) {
+    if (!elements.indicator || !elements.daytimeSegment) return;
+    if (!sunrise || !sunset) return;
+    
+    try {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      // Timeline represents 24 hours (1440 minutes)
+      const dayMinutes = 24 * 60;
+      
+      // Calculate percentages for positioning
+      const sunrisePercent = (sunrise.totalMinutes / dayMinutes) * 100;
+      const sunsetPercent = (sunset.totalMinutes / dayMinutes) * 100;
+      const currentPercent = (currentMinutes / dayMinutes) * 100;
+      
+      // Position daytime segment
+      elements.daytimeSegment.style.left = `${sunrisePercent}%`;
+      elements.daytimeSegment.style.width = `${sunsetPercent - sunrisePercent}%`;
+      
+      // Position the sun indicator based on current time
+      elements.indicator.style.left = `${currentPercent}%`;
+      
+      // Update indicator appearance based on day/night
+      const isDaytime = currentMinutes >= sunrise.totalMinutes && currentMinutes <= sunset.totalMinutes;
+      const innerCircle = elements.indicator.querySelector('div');
+      
+      if (innerCircle) {
+        innerCircle.classList.toggle('bg-amber-300', isDaytime);
+        innerCircle.classList.toggle('bg-amber-900/50', !isDaytime);
+      }
+    } catch (e) {
+      console.error('Error updating sun visualizations:', e);
+    }
+  }
+  
+  // Data fetching and rendering
+  async function fetchSunData() {
+    try {
+      const response = await fetch(
+        `https://api.ipgeolocation.io/astronomy?apiKey=${apiKey}&lat=${coordinates.lat}&long=${coordinates.long}`
+      );
+      
+      if (!response.ok) throw new Error('Network response was not ok');
+      
+      const data = await response.json();
+      renderSunData(data);
+    } catch (error) {
+      console.error("Error fetching sun data:", error);
+      // Show component anyway with default values
+      elements.component.classList.remove('opacity-0');
+    }
+  }
+  
+  function renderSunData(data) {
+    if (!data) return;
+    
+    // Parse times
+    const sunrise = parseTimeString(data.sunrise || "06:00");
+    const sunset = parseTimeString(data.sunset || "18:00");
+    const midday = calculateMidday(sunrise, sunset);
+    
+    // Update DOM elements
+    if (elements.sunRise) elements.sunRise.textContent = data.sunrise || "--:--";
+    if (elements.sunSet) elements.sunSet.textContent = data.sunset || "--:--";
+    if (elements.sunDate) elements.sunDate.textContent = formatDate(data.date || new Date());
+    if (elements.sunMidday && midday) elements.sunMidday.textContent = midday.formatted;
+    
+    // Calculate and display day length
+    if (elements.dayLength) {
+      elements.dayLength.textContent = data.day_length || calculateDayLength(sunrise, sunset);
+    }
+    
+    // Update sun position visualizations
+    updateSunVisualizations(sunrise, sunset);
+    
+    // Show the component
+    elements.component.classList.remove('opacity-0');
+  }
+  
+  // Init
+  function init() {
+    setupModalEvents();
+    fetchSunData();
+    
+    // Update position every minute
+    setInterval(() => {
+      const sunrise = parseTimeString(elements.sunRise?.textContent);
+      const sunset = parseTimeString(elements.sunSet?.textContent);
+      if (sunrise && sunset) {
+        updateSunVisualizations(sunrise, sunset);
+      }
+    }, 60000);
+  }
+  
+  // Execute everything
+  init();
+})();
+</script>
