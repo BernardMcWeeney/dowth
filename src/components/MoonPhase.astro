@@ -16,23 +16,14 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
     }
 
     setupEventListeners() {
-      console.log('Setting up moon event listeners');
-      
       // Get DOM elements
       const iconWrapper = this.querySelector('.moon-icon-wrapper');
       const fullCard = this.querySelector('.moon-card');
       const closeBtn = this.querySelector('.moon-close-btn');
       
-      console.log('Moon elements:', { 
-        iconWrapper: !!iconWrapper, 
-        fullCard: !!fullCard, 
-        closeBtn: !!closeBtn 
-      });
-      
       if (iconWrapper && fullCard) {
         // Direct show/hide approach with inline styles
         iconWrapper.addEventListener('click', (e) => {
-          console.log('Moon icon clicked');
           this.classList.add('is-expanded');
           fullCard.style.display = 'flex';
           fullCard.style.opacity = '1';
@@ -43,7 +34,6 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
         
         if (closeBtn) {
           closeBtn.addEventListener('click', (e) => {
-            console.log('Moon close clicked');
             this.classList.remove('is-expanded');
             fullCard.style.display = 'none';
             fullCard.style.opacity = '0';
@@ -57,7 +47,6 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
         document.addEventListener('click', (e) => {
           if (this.classList.contains('is-expanded') && 
               !this.contains(e.target)) {
-            console.log('Outside click - hiding moon card');
             this.classList.remove('is-expanded');
             fullCard.style.display = 'none';
             fullCard.style.opacity = '0';
@@ -66,7 +55,6 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
           }
         });
       } else {
-        console.error('Moon components not found - will retry');
         // Try again after a delay
         setTimeout(() => this.setupEventListeners(), 500);
       }
@@ -220,41 +208,42 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
     <div class="moon-icon-container relative">
       <div 
         data-moon-icon 
-        class="h-10 w-10 rounded-full bg-slate-200 shadow-inner"
+        class="h-8 w-8 md:h-10 md:w-10 rounded-full bg-slate-200 shadow-inner"
       ></div>
     </div>
   </div>
 
   <!-- Expanded moon card -->
-  <div class="moon-card absolute top-0 right-0 opacity-0 hidden p-4 rounded-xl bg-slate-900/80 shadow-lg text-white md:w-72 mt-12 select-none" style="display: none;">
-    <button class="moon-close-btn absolute top-2 right-2 text-slate-400 hover:text-white transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="moon-card fixed top-0 left-0 right-0 md:absolute md:top-0 md:right-0 md:left-auto opacity-0 hidden flex-col p-5 rounded-xl md:rounded-xl bg-slate-900/90 shadow-lg text-white w-full h-auto md:w-72 md:h-auto md:mt-12 select-none" style="display: none;">
+    <button class="moon-close-btn absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
     </button>
-    <div class="flex items-center justify-center mb-3">
-      <div class="moon-wrapper relative mr-4">
+    
+    <div class="flex items-center justify-center mt-6 md:mt-0 mb-6 md:mb-3">
+      <div class="moon-wrapper relative mr-5">
         <div 
           data-moon 
-          class="h-16 w-16 rounded-full bg-slate-200 shadow-inner"
+          class="h-20 w-20 md:h-16 md:w-16 rounded-full bg-slate-200 shadow-inner"
         ></div>
       </div>
       <div class="moon-info">
-        <p class="text-xs text-slate-400" data-date>--/--</p>
-        <h2 class="text-xl font-medium" data-moon-phase-name>Loading...</h2>
-        <p class="text-sm text-slate-400">Illumination: <span data-moon-phase-percent>-</span></p>
+        <p class="text-sm text-slate-400" data-date>--/--</p>
+        <h2 class="text-2xl md:text-xl font-medium" data-moon-phase-name>Loading...</h2>
+        <p class="text-base md:text-sm text-slate-400">Illumination: <span data-moon-phase-percent>-</span></p>
       </div>
     </div>
     
-    <div class="moon-times grid grid-cols-2 gap-6 w-full mt-4 text-center">
+    <div class="moon-times grid grid-cols-2 gap-6 md:gap-6 w-full mt-6 md:mt-4 text-center mb-8 md:mb-0">
       <div class="moon-rise">
-        <p class="text-slate-400 text-sm">Rise</p>
-        <p class="font-medium text-base" data-moon-rise>--:--</p>
+        <p class="text-slate-400 text-base md:text-sm">Rise</p>
+        <p class="font-medium text-lg md:text-base" data-moon-rise>--:--</p>
       </div>
       <div class="moon-set">
-        <p class="text-slate-400 text-sm">Set</p>
-        <p class="font-medium text-base" data-moon-set>--:--</p>
+        <p class="text-slate-400 text-base md:text-sm">Set</p>
+        <p class="font-medium text-lg md:text-base" data-moon-set>--:--</p>
       </div>
     </div>
   </div>
@@ -293,5 +282,12 @@ const { ASTRONOMY_API_KEY } = import.meta.env;
   moon-phase.is-expanded .moon-icon-wrapper {
     transform: scale(0);
     opacity: 0;
+  }
+  
+  @media (max-width: 768px) {
+    moon-phase.is-expanded .moon-card {
+      height: auto;
+      min-height: 200px;
+    }
   }
 </style>

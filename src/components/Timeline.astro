@@ -1,48 +1,55 @@
 ---
-// src/components/Timeline.astro
+// src/components/Timeline.astro - Simplified and Unified Design
 ---
 
 <div class="w-full px-4 md:px-8 py-6 bg-gradient-to-b from-transparent to-black/50 backdrop-blur-sm z-10 mt-auto">
   <div class="container max-w-5xl mx-auto">
-    <!-- Date and countdown display for desktop -->
-    <div class="hidden md:flex justify-between items-center mb-4 text-white">
+    <!-- Date and countdown display (Visible on all devices) -->
+    <div class="flex justify-between items-center mb-4 text-white">
       <div>
-        <span id="current-date" class="text-white/80 text-sm"></span>
+        <span id="current-date" class="text-white/80 text-xs md:text-sm"></span>
       </div>
       <div>
-        <span id="desktop-countdown" class="text-amber-200 text-sm font-medium"></span>
+        <span id="countdown" class="text-amber-200 text-xs md:text-sm font-medium"></span>
       </div>
     </div>
-    <!-- Desktop Timeline -->
-    <div class="hidden md:block">
+
+    <!-- Current Season Highlight - Visible on all devices -->
+    <div id="current-season-display" class="text-center mb-4 hidden">
+      <h3 id="season-name" class="text-amber-200 text-lg md:text-xl tracking-widest mb-1"></h3>
+      <p id="season-irish" class="text-amber-100/80 text-xs italic mb-2"></p>
+    </div>
+    
+    <!-- Unified Timeline -->
+    <div>
       <!-- Timeline bar with gradient -->
-      <div class="h-4 rounded-full relative bg-gradient-to-r from-indigo-800 via-amber-500 to-indigo-800 overflow-hidden">
+      <div class="h-3 md:h-4 rounded-full relative bg-gradient-to-r from-indigo-800 via-amber-500 to-indigo-800 overflow-hidden">
         <!-- Current position marker -->
-        <div id="date-marker" class="absolute top-1/2 w-4 h-8 rounded-full bg-white -translate-y-1/2 shadow-lg z-10 transition-all duration-500 -translate-x-1/2"></div>
+        <div id="date-marker" class="absolute top-1/2 w-3 h-6 md:w-4 md:h-8 rounded-full bg-white -translate-y-1/2 shadow-lg z-10 transition-all duration-500 -translate-x-1/2"></div>
         
         <!-- Season markers with tooltips -->
-        <div id="winter-marker" class="group absolute top-0 h-full w-1 bg-white/50 -translate-x-1/2 cursor-pointer">
+        <div id="winter-marker" class="group absolute top-0 h-full w-1 md:w-1 bg-white/50 -translate-x-1/2 cursor-pointer">
           <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 w-48 bg-black/80 p-2 rounded text-xs text-white mb-1 z-30">
             <p class="font-bold">Winter Solstice</p>
             <p>Grianstad an Gheimhridh</p>
             <p class="text-amber-200 mt-1">Celtic Festival: Samhain (around 1st Nov)</p>
           </div>
         </div>
-        <div id="spring-marker" class="group absolute top-0 h-full w-1 bg-white/50 -translate-x-1/2 cursor-pointer">
+        <div id="spring-marker" class="group absolute top-0 h-full w-1 md:w-1 bg-white/50 -translate-x-1/2 cursor-pointer">
           <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 w-48 bg-black/80 p-2 rounded text-xs text-white mb-1 z-30">
             <p class="font-bold">Spring Equinox</p>
             <p>Cónocht an Earraigh</p>
             <p class="text-amber-200 mt-1">Celtic Festival: Imbolc (around 1st Feb)</p>
           </div>
         </div>
-        <div id="summer-marker" class="group absolute top-0 h-full w-1 bg-white/50 -translate-x-1/2 cursor-pointer">
+        <div id="summer-marker" class="group absolute top-0 h-full w-1 md:w-1 bg-white/50 -translate-x-1/2 cursor-pointer">
           <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 w-48 bg-black/80 p-2 rounded text-xs text-white mb-1 z-30">
             <p class="font-bold">Summer Solstice</p>
             <p>Grianstad an tSamhraidh</p>
             <p class="text-amber-200 mt-1">Celtic Festival: Bealtaine (around 1st May)</p>
           </div>
         </div>
-        <div id="autumn-marker" class="group absolute top-0 h-full w-1 bg-white/50 -translate-x-1/2 cursor-pointer">
+        <div id="autumn-marker" class="group absolute top-0 h-full w-1 md:w-1 bg-white/50 -translate-x-1/2 cursor-pointer">
           <div class="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 w-48 bg-black/80 p-2 rounded text-xs text-white mb-1 z-30">
             <p class="font-bold">Autumn Equinox</p>
             <p>Cónocht an Fhómhair</p>
@@ -51,69 +58,45 @@
         </div>
       </div>
       
-      <!-- Season details -->
-      <div class="mt-4 relative">
-        <div class="grid grid-cols-4 gap-6 pt-2">
-          <div class="text-center rounded p-2 transition-all duration-300" id="winter">
+      <!-- Season labels (visible on all devices but styled differently) -->
+      <div class="flex justify-between text-xs md:text-xs text-white/60 px-1 mt-2">
+        <span>Winter</span>
+        <span>Spring</span>
+        <span>Summer</span>
+        <span>Autumn</span>
+      </div>
+      
+      <!-- Season details - Desktop only but same structure as mobile -->
+      <div class="mt-6 hidden md:block">
+        <div class="grid grid-cols-4 gap-4">
+          <div class="text-center rounded p-2 transition-all duration-300" id="winter-details">
             <h4 class="uppercase text-sm tracking-widest mb-1">Winter Solstice</h4>
             <p class="text-amber-200 text-xs font-light mb-1">Grianstad an Gheimhridh</p>
             <time class="text-white/70 text-xs block" id="winter-date"></time>
             <p class="text-white/60 text-xs mt-1 italic">Samhain</p>
           </div>
           
-          <div class="text-center rounded p-2 transition-all duration-300" id="spring">
+          <div class="text-center rounded p-2 transition-all duration-300" id="spring-details">
             <h4 class="uppercase text-sm tracking-widest mb-1">Spring Equinox</h4>
             <p class="text-amber-200 text-xs font-light mb-1">Cónocht an Earraigh</p>
             <time class="text-white/70 text-xs block" id="spring-date"></time>
             <p class="text-white/60 text-xs mt-1 italic">Imbolc</p>
           </div>
           
-          <div class="text-center rounded p-2 transition-all duration-300" id="summer">
+          <div class="text-center rounded p-2 transition-all duration-300" id="summer-details">
             <h4 class="uppercase text-sm tracking-widest mb-1">Summer Solstice</h4>
             <p class="text-amber-200 text-xs font-light mb-1">Grianstad an tSamhraidh</p>
             <time class="text-white/70 text-xs block" id="summer-date"></time>
             <p class="text-white/60 text-xs mt-1 italic">Bealtaine</p>
           </div>
           
-          <div class="text-center rounded p-2 transition-all duration-300" id="autumn">
+          <div class="text-center rounded p-2 transition-all duration-300" id="autumn-details">
             <h4 class="uppercase text-sm tracking-widest mb-1">Autumn Equinox</h4>
             <p class="text-amber-200 text-xs font-light mb-1">Cónocht an Fhómhair</p>
             <time class="text-white/70 text-xs block" id="autumn-date"></time>
             <p class="text-white/60 text-xs mt-1 italic">Lughnasa</p>
           </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- Mobile Timeline -->
-    <div class="md:hidden">
-      <!-- Current season display -->
-      <div class="text-center mb-4">
-        <h3 id="mobile-season" class="text-amber-200 text-lg tracking-widest mb-1"></h3>
-        <p id="mobile-irish" class="text-amber-100/80 text-xs italic mb-2"></p>
-        <div class="flex justify-center items-center gap-2 text-white/80 text-xs">
-          <time id="mobile-date"></time>
-          <span id="mobile-countdown"></span>
-        </div>
-      </div>
-      
-      <!-- Simple mobile timeline -->
-      <div class="h-3 rounded-full relative bg-gradient-to-r from-indigo-800 via-amber-500 to-indigo-800 overflow-hidden mb-2">
-        <div id="date-marker-mobile" class="absolute top-1/2 w-3 h-6 rounded-full bg-white -translate-y-1/2 shadow-lg z-10 transition-all duration-500 -translate-x-1/2"></div>
-        
-        <!-- Season markers with tap/touch info -->
-        <div id="winter-marker-mobile" class="absolute top-0 h-full w-3 bg-white/50 -translate-x-1/2 cursor-pointer rounded-full"></div>
-        <div id="spring-marker-mobile" class="absolute top-0 h-full w-3 bg-white/50 -translate-x-1/2 cursor-pointer rounded-full"></div>
-        <div id="summer-marker-mobile" class="absolute top-0 h-full w-3 bg-white/50 -translate-x-1/2 cursor-pointer rounded-full"></div>
-        <div id="autumn-marker-mobile" class="absolute top-0 h-full w-3 bg-white/50 -translate-x-1/2 cursor-pointer rounded-full"></div>
-      </div>
-      
-      <!-- Season labels -->
-      <div class="flex justify-between text-xs text-white/60 px-1">
-        <span>Winter</span>
-        <span>Spring</span>
-        <span>Summer</span>
-        <span>Autumn</span>
       </div>
     </div>
   </div>
@@ -134,7 +117,6 @@
       }
     } catch (error) {
       console.error('Error:', error);
-      // Don't use fallback, just show error
       console.error('Unable to load season data');
     }
   });
@@ -195,26 +177,25 @@
     // Calculate current progress through the year (as percentage)
     const yearProgress = ((currentDate - yearStart) / (yearEnd - yearStart)) * 100;
     
-    // Update marker positions
+    // Update marker position (unified for both mobile and desktop)
     document.getElementById('date-marker').style.left = `${yearProgress}%`;
-    document.getElementById('date-marker-mobile').style.left = `${yearProgress}%`;
     
-    // Clear any previous highlights
-    document.querySelectorAll('#winter, #spring, #summer, #autumn').forEach(el => {
+    // Reset any previous highlights
+    document.querySelectorAll('[id$="-details"]').forEach(el => {
       el.classList.remove('bg-white/10', 'border', 'border-amber-500/50');
-      el.querySelector('h4').classList.remove('text-amber-200');
+      const header = el.querySelector('h4');
+      if (header) header.classList.remove('text-amber-200');
     });
     
-    // Update each season's position and info
+    // Update each season's position and info (unified)
     seasons.forEach(season => {
       const seasonId = season.type.toLowerCase();
       const seasonProgress = ((season.date - yearStart) / (yearEnd - yearStart)) * 100;
       
-      // Position markers
+      // Position markers (unified)
       document.getElementById(`${seasonId}-marker`).style.left = `${seasonProgress}%`;
-      document.getElementById(`${seasonId}-marker-mobile`).style.left = `${seasonProgress}%`;
       
-      // Update date text
+      // Format and update date display (unified)
       const dateElement = document.getElementById(`${seasonId}-date`);
       if (dateElement) {
         const month = season.date.toLocaleString('default', { month: 'short' });
@@ -228,40 +209,35 @@
     // Find current and next season
     const { current, next } = getCurrentAndNextSeason(seasons, currentDate);
     
-    // Highlight current season
+    // Highlight current season (unified approach)
     if (current) {
-      const currentEl = document.querySelector(`#${current.type.toLowerCase()}`);
-      if (currentEl) {
-        // Add highlight to the header
-        currentEl.querySelector('h4').classList.add('text-amber-200');
-        // Add border and background to the current season box
-        currentEl.classList.add('bg-white/10', 'border', 'border-amber-500/50');
+      const seasonId = current.type.toLowerCase();
       
-        // Update mobile view
-        document.getElementById('mobile-season').textContent = current.type;
-        document.getElementById('mobile-irish').textContent = current.irishName;
-        
-        const month = current.date.toLocaleString('default', { month: 'short' });
-        const day = current.date.getDate();
-        document.getElementById('mobile-date').textContent = `${day} ${month}`;
+      // Show the current season display area
+      const currentSeasonDisplay = document.getElementById('current-season-display');
+      currentSeasonDisplay.classList.remove('hidden');
+      
+      // Update the current season info
+      document.getElementById('season-name').textContent = current.type;
+      document.getElementById('season-irish').textContent = current.irishName;
+      
+      // Highlight in detail section if on desktop
+      const currentEl = document.getElementById(`${seasonId}-details`);
+      if (currentEl) {
+        currentEl.querySelector('h4').classList.add('text-amber-200');
+        currentEl.classList.add('bg-white/10', 'border', 'border-amber-500/50');
       }
     }
     
-    // Set countdown to next season
+    // Set countdown to next season (unified)
     if (next) {
       const daysUntil = Math.ceil((next.date - currentDate) / (1000 * 60 * 60 * 24));
       const countdownText = `${daysUntil} days until ${next.type}`;
       
-      // Update mobile countdown
-      document.getElementById('mobile-countdown').textContent = countdownText;
+      // Update unified countdown
+      document.getElementById('countdown').textContent = countdownText;
       
-      // Update desktop countdown
-      const desktopCountdown = document.getElementById('desktop-countdown');
-      if (desktopCountdown) {
-        desktopCountdown.textContent = countdownText;
-      }
-      
-      // Set current date display
+      // Set current date display (unified)
       const currentDateEl = document.getElementById('current-date');
       if (currentDateEl) {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
