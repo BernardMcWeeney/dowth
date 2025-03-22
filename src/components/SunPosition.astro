@@ -1,0 +1,270 @@
+---
+// SunPosition.astro
+const { ASTRONOMY_API_KEY } = import.meta.env;
+---
+
+<script define:vars={{ apiKey: ASTRONOMY_API_KEY }}>
+  class SunPosition extends HTMLElement {
+    constructor() {
+      super();
+      this.fetchSunData();
+    }
+
+    async fetchSunData() {
+      const lat = "53.7038";
+      const long = "-6.4504";
+      
+      try {
+        const response = await fetch(
+          `https://api.ipgeolocation.io/astronomy?apiKey=${apiKey}&lat=${lat}&long=${long}`,
+          { method: "GET", redirect: "follow" }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        
+        const data = await response.json();
+        console.log("API Response:", data); // Log the response for debugging
+        this.renderSunPosition(data);
+      } catch (error) {
+        console.error("Error fetching sun data:", error);
+        this.showError("Could not load sun data");
+      }
+    }
+
+    showError(message) {
+      // Display error message and show component
+      const errorEl = this.querySelector('.error-message');
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+      }
+      
+      // Still show the component but in error state
+      this.classList.remove('opacity-0');
+      this.classList.add('opacity-100');
+    }
+
+    renderSunPosition(data) {
+      if (!data) {
+        this.showError("Missing data from API response");
+        return;
+      }
+      
+      // Get elements
+      const dayLengthEl = this.querySelector('[data-day-length]');
+      const solarNoonEl = this.querySelector('[data-solar-noon]');
+      const sunPositionEl = this.querySelector('[data-sun-position]');
+      const riseTimeEl = this.querySelector('[data-sun-rise]');
+      const setTimeEl = this.querySelector('[data-sun-set]');
+      const errorEl = this.querySelector('.error-message');
+      
+      // Hide error message if it exists
+      if (errorEl) {
+        errorEl.classList.add('hidden');
+      }
+      
+      // Update text content
+      if (dayLengthEl) dayLengthEl.textContent = data.day_length || "--:--";
+      if (solarNoonEl) solarNoonEl.textContent = data.solar_noon || "--:--";
+      if (riseTimeEl) riseTimeEl.textContent = data.sunrise || "--:--";
+      if (setTimeEl) setTimeEl.textContent = data.sunset || "--:--";
+      
+      // Update sun position indicator
+      if (sunPositionEl) {
+        this.updateSunPositionIndicator(sunPositionEl, data);
+      }
+      
+      // Show the component
+      this.classList.remove('opacity-0');
+      this.classList.add('opacity-100');
+    }
+    
+    formatDate(dateStr) {
+      try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-IE', { 
+          month: 'short', 
+          day: 'numeric' 
+        });
+      } catch (e) {
+        return dateStr;
+      }
+    }
+    
+    updateSunPositionIndicator(sunEl, data) {
+      // Extract sun information
+      const sunrise = this.timeToMinutes(data.sunrise || "06:00");
+      const sunset = this.timeToMinutes(data.sunset || "18:00");
+      const currentTime = this.timeToMinutes(data.current_time || "12:00");
+      
+      // Calculate position along the arc (0 to 1)
+      const dayLength = sunset - sunrise;
+      let position = Math.max(0, Math.min(1, (currentTime - sunrise) / dayLength));
+      
+      // Handle night time (before sunrise or after sunset)
+      let isDaytime = true;
+      if (currentTime < sunrise) {
+        // Pre-dawn: position between previous sunset and sunrise
+        const midnightMinutes = 0;
+        const dayMinutes = 24 * 60;
+        const nightLength = (dayMinutes - sunset) + sunrise;
+        const nightProgress = (currentTime + dayMinutes - sunset) % dayMinutes;
+        position = 1 - (nightProgress / nightLength);
+        isDaytime = false;
+      } else if (currentTime > sunset) {
+        // Night: position between sunset and next sunrise
+        const dayMinutes = 24 * 60;
+        const nightLength = (dayMinutes - sunset) + sunrise;
+        const nightProgress = (currentTime - sunset);
+        position = nightProgress / nightLength;
+        isDaytime = false;
+      }
+      
+      // Visual representation
+      const sunColor = this.getSunColor(position, isDaytime);
+      sunEl.style.backgroundColor = sunColor;
+      
+      // Sun indicator positioning
+      const indicator = sunEl.querySelector('.sun-indicator');
+      if (indicator) {
+        const r = 20; // radius of arc
+        let angle;
+        
+        if (isDaytime) {
+          // Day time: move along bottom semi-circle (180° to 360°)
+          angle = (position * 180) + 180;
+        } else {
+          // Night time: move along top semi-circle (0° to 180°)
+          angle = position * 180;
+        }
+        
+        const angleRad = angle * (Math.PI / 180);
+        const x = r * Math.cos(angleRad);
+        const y = r * Math.sin(angleRad);
+        
+        // Position the sun indicator along the arc
+        indicator.style.transform = `translate(${x}px, ${y}px)`;
+      }
+      
+      // Update the status text
+      const statusEl = this.querySelector('.sun-status-display');
+      if (statusEl) {
+        if (currentTime < sunrise) {
+          statusEl.textContent = "Pre-dawn";
+        } else if (currentTime < sunrise + 60) {
+          statusEl.textContent = "Sunrise";
+        } else if (currentTime > sunset - 60 && currentTime < sunset) {
+          statusEl.textContent = "Sunset";
+        } else if (currentTime > sunset) {
+          statusEl.textContent = "Night";
+        } else {
+          statusEl.textContent = "Day";
+        }
+      }
+    }
+    
+    timeToMinutes(timeStr) {
+      if (!timeStr) return 720; // default to 12 hours
+      
+      const parts = timeStr.split(':');
+      if (parts.length < 2) return 720;
+      
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+      
+      if (isNaN(hours) || isNaN(minutes)) return 720;
+      
+      return (hours * 60) + minutes;
+    }
+    
+    getSunColor(position, isDaytime) {
+      // Color mapping based on position in day
+      if (!isDaytime) {
+        return "#3B4469"; // Night blue
+      } else if (position < 0.2) {
+        return "#FF9E53"; // Sunrise orange
+      } else if (position < 0.3) {
+        return "#FFB94E"; // Morning yellow-orange
+      } else if (position < 0.7) {
+        return "#FFDD4A"; // Midday yellow
+      } else if (position < 0.8) {
+        return "#FFB94E"; // Afternoon yellow-orange
+      } else {
+        return "#FF9E53"; // Sunset orange
+      }
+    }
+  }
+
+  customElements.define('sun-position', SunPosition);
+</script>
+
+<sun-position class="fixed top-4 left-4 z-50 transition-opacity duration-700 opacity-0">
+  <div class="sun-card flex flex-col items-center p-4 rounded-xl bg-slate-900/80 shadow-lg text-white max-w-xs select-none">
+    <div class="error-message hidden text-red-400 text-xs mb-2 text-center"></div>
+    
+    <div class="flex items-center justify-center">
+      <div class="sun-wrapper relative mr-3">
+        <div 
+          data-sun-position 
+          class="sun h-12 w-12 rounded-full bg-yellow-400 shadow-lg flex items-center justify-center relative"
+        >
+          <!-- Full circle arc for both day and night -->
+          <div class="sun-arc relative w-full h-full overflow-visible">
+            <div class="absolute w-10 h-10 border-2 border-white/20 rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+            <div class="sun-indicator absolute w-2 h-2 bg-white rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+          </div>
+
+        </div>
+      </div>
+      <div class="sun-info">
+        <h2 class="text-lg font-medium sun-status-display">Day</h2>
+        <p class="text-xs text-slate-400">Day length: <span data-day-length>--:--</span></p>
+        <p class="text-xs text-slate-400">Solar Noon: <span data-solar-noon>--:--</span></p>
+      </div>
+    </div>
+    
+    <div class="sun-times grid grid-cols-2 gap-4 w-full mt-2 text-center text-xs">
+      <div class="sun-rise">
+        <p class="text-slate-400">Rise</p>
+        <p class="font-medium" data-sun-rise>--:--</p>
+      </div>
+      <div class="sun-set">
+        <p class="text-slate-400">Set</p>
+        <p class="font-medium" data-sun-set>--:--</p>
+      </div>
+    </div>
+    
+
+  </div>
+</sun-position>
+
+<style>
+  .sun {
+    box-shadow: 0 0 15px rgba(255, 221, 74, 0.6);
+    transition: background-color 0.5s ease;
+  }
+  
+  .sun-indicator {
+    transition: transform 0.5s ease;
+  }
+  
+  .sun-card {
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  /* Create starry background effect */
+  .sun-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 16px 16px;
+    opacity: 0.3;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+</style>

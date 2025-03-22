@@ -1,9 +1,75 @@
 ---
-// Footer.astro
+// src/components/Footer.astro
 ---
 
-<footer class="absolute bottom-0 w-full py-3 px-4 text-center text-white/70 text-xs bg-black/20 backdrop-blur-sm z-10">
+<footer class="fixed bottom-0 w-full py-3 px-4 text-center text-white/60 text-xs bg-black/30 backdrop-blur-sm z-20">
+  <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
     <p>
-      Designed with <a href="https://greenberry.ie" target="_blank" rel="noopener" class="font-bold hover:underline">Greenberry</a> by Bernard McWeeney | &copy; 2025 Dowth.ie. All rights reserved.
+      <a href="#" id="random-fact" class="hover:text-amber-200 transition-colors duration-300 text-white/70">Did you know?</a>
     </p>
+    
+    <p>
+      Designed with <a href="https://greenberry.ie" target="_blank" rel="noopener" class="text-white hover:text-amber-200 transition-colors duration-300">Greenberry</a> by Bernard McWeeney | &copy; {new Date().getFullYear()} Dowth.ie
+    </p>
+  </div>
 </footer>
+
+<div id="fact-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="bg-gray-900/90 max-w-md rounded-lg p-6 border border-amber-800/50 shadow-lg">
+    <h3 class="text-amber-200 text-lg mb-3 font-cinzel">Dowth Monument Facts</h3>
+    <p id="fact-content" class="text-white/90 mb-4 text-sm leading-relaxed"></p>
+    <button id="close-modal" class="px-4 py-2 bg-amber-700/60 text-white text-sm rounded-full hover:bg-amber-600/80 transition-colors duration-300">Close</button>
+  </div>
+</div>
+
+<script>
+  // Array of interesting facts about Dowth
+  const facts = [
+    "Dowth was built around 3200 BCE, making it over 5,000 years old.",
+    "The name 'Dowth' comes from the Irish 'Dubhadh', meaning 'darkness' or 'darkening'.",
+    "Dowth is part of the Brú na Bóinne UNESCO World Heritage Site along with Newgrange and Knowth.",
+    "The passage tomb at Dowth is aligned with the setting sun of the winter solstice.",
+    "There are two passages within Dowth, known as Dowth North and Dowth South.",
+    "The mound at Dowth is about 85 meters in diameter and 15 meters high.",
+    "Some of the kerbstones surrounding Dowth feature megalithic art and carvings.",
+    "Dowth has been less extensively excavated than its neighbors Newgrange and Knowth.",
+    "In 1847, Dowth was partially damaged by treasure hunters digging into the mound.",
+    "Astronomical symbols and lunar maps have been identified in the carvings at Dowth."
+  ];
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    const randomFactBtn = document.getElementById('random-fact');
+    const factModal = document.getElementById('fact-modal');
+    const factContent = document.getElementById('fact-content');
+    const closeModal = document.getElementById('close-modal');
+    
+    if (randomFactBtn && factModal && factContent && closeModal) {
+      // Show random fact in modal
+      randomFactBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Get random fact
+        const randomFact = facts[Math.floor(Math.random() * facts.length)];
+        factContent.textContent = randomFact;
+        
+        // Show modal
+        factModal.classList.remove('opacity-0', 'pointer-events-none');
+        factModal.classList.add('opacity-100', 'pointer-events-auto');
+      });
+      
+      // Close modal
+      closeModal.addEventListener('click', () => {
+        factModal.classList.remove('opacity-100', 'pointer-events-auto');
+        factModal.classList.add('opacity-0', 'pointer-events-none');
+      });
+      
+      // Close modal on background click
+      factModal.addEventListener('click', (e) => {
+        if (e.target === factModal) {
+          factModal.classList.remove('opacity-100', 'pointer-events-auto');
+          factModal.classList.add('opacity-0', 'pointer-events-none');
+        }
+      });
+    }
+  });
+</script>
